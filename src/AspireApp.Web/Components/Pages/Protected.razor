@@ -1,0 +1,14 @@
+@page "/protected"
+@attribute [Authorize]
+
+<PageTitle>Protected - AspireApp</PageTitle>
+
+<div class="protected-page-container">
+    <h1>Protected Page</h1>
+    <AuthorizeView>
+        <Authorized>
+            <p>Welcome, @context.User.Identity?.Name!</p>
+            <p>Email: @context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
+        </Authorized>
+    </AuthorizeView>
+</div>

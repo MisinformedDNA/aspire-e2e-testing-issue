@@ -1,0 +1,31 @@
+@using Microsoft.AspNetCore.Components.Authorization
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/">AspireApp</a>
+        <div class="navbar-nav ms-auto">
+            <AuthorizeView>
+                <Authorized>
+                    <button class="btn btn-outline-light" @onclick="SignOut">Sign Out</button>
+                </Authorized>
+                <NotAuthorized>
+                    <button class="btn btn-outline-light" @onclick="SignIn">Sign In</button>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</nav>
+
+@code {
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+
+    private async Task SignIn()
+    {
+        await JSRuntime.InvokeVoidAsync("clerkInterop.openSignIn");
+    }
+
+    private async Task SignOut()
+    {
+        await JSRuntime.InvokeVoidAsync("clerkInterop.signOut");
+    }
+}

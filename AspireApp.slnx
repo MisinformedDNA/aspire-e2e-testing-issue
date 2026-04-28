@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AspireApp.ServiceDefaults/AspireApp.ServiceDefaults.csproj" />
+    <Project Path="src/AspireApp.Api/AspireApp.Api.csproj" />
+    <Project Path="src/AspireApp.Web/AspireApp.Web.csproj" />
+    <Project Path="src/AspireApp.AppHost/AspireApp.AppHost.csproj" />
+    <Project Path="src/AspireApp.Functions/AspireApp.Functions.csproj" />
+    <Project Path="src/Clerk.Blazor/Clerk.Blazor.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/AspireApp.E2E.Tests/AspireApp.E2E.Tests.csproj" />
+  </Folder>
+</Solution>
