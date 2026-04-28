@@ -3,17 +3,14 @@ namespace AspireApp.E2E.Tests;
 public class AuthenticatedTests : BasePlaywrightTests
 {
     [Test]
-    public async Task Login_ShouldAuthenticateUser_WithClerkFlow()
+    public async Task Login_ShouldAuthenticateUser()
     {
         await using var context = await CreateBrowserContextAsync();
         var page = await context.NewPageAsync();
 
-        await page.GotoAsync(WebBaseUrl);
-        await WaitForClerkToLoadAsync(page);
-
         var authenticated = await AuthenticateUserAsync(page);
 
-        authenticated.Should().BeTrue("user should be authenticated after completing Clerk flow");
+        authenticated.Should().BeTrue("user should be authenticated after completing stub auth flow");
 
         var authUi = await page.QuerySelectorAsync(PageSelectors.AuthenticatedUi);
         authUi.Should().NotBeNull();
@@ -24,9 +21,6 @@ public class AuthenticatedTests : BasePlaywrightTests
     {
         await using var context = await CreateBrowserContextAsync();
         var page = await context.NewPageAsync();
-
-        await page.GotoAsync(WebBaseUrl);
-        await WaitForClerkToLoadAsync(page);
 
         var authenticated = await AuthenticateUserAsync(page);
         authenticated.Should().BeTrue();
@@ -48,13 +42,9 @@ public class AuthenticatedTests : BasePlaywrightTests
         await using var context = await CreateBrowserContextAsync();
         var page = await context.NewPageAsync();
 
-        await page.GotoAsync(WebBaseUrl);
-        await WaitForClerkToLoadAsync(page);
-
         var authenticated = await AuthenticateUserAsync(page);
         authenticated.Should().BeTrue();
 
-        // Find and click sign out
         var signOutButton = await page.WaitForSelectorAsync(PageSelectors.AuthenticatedUi, new PageWaitForSelectorOptions
         {
             State = WaitForSelectorState.Visible,
@@ -62,7 +52,6 @@ public class AuthenticatedTests : BasePlaywrightTests
         });
         await signOutButton!.ClickAsync();
 
-        // Should show login trigger again
         await page.WaitForSelectorAsync(PageSelectors.LoginTrigger, new PageWaitForSelectorOptions
         {
             State = WaitForSelectorState.Visible,

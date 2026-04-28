@@ -1,0 +1,45 @@
+@page "/login"
+
+<PageTitle>Sign In - AspireApp</PageTitle>
+
+<div class="login-container" style="max-width: 400px; margin: 4rem auto;">
+    <h1>Sign In</h1>
+    <div id="login-error" class="alert alert-danger" style="display:none;">Invalid email or password.</div>
+
+    <div class="mb-3">
+        <label for="login-email" class="form-label">Email</label>
+        <input type="email" class="form-control" id="login-email" placeholder="test@example.com" />
+    </div>
+    <div class="mb-3">
+        <label for="login-password" class="form-label">Password</label>
+        <input type="password" class="form-control" id="login-password" />
+    </div>
+    <button type="button" class="btn btn-primary w-100" id="login-submit" onclick="handleLogin()">Sign In</button>
+</div>
+
+<script>
+    async function handleLogin() {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        const errorDiv = document.getElementById('login-error');
+
+        try {
+            const formData = new FormData();
+            formData.append('email', email);
+            formData.append('password', password);
+
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                window.location.href = '/';
+            } else {
+                errorDiv.style.display = 'block';
+            }
+        } catch (e) {
+            errorDiv.style.display = 'block';
+        }
+    }
+</script>

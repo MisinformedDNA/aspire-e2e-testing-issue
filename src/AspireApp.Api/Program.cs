@@ -1,63 +1,47 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+using AspireApp.Api;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-// Azure Storage Queues
-builder.AddAzureQueueClient("queues");
-
-// CosmosDB
-builder.AddAzureCosmosClient("cosmosdb");
-
-// JWT Bearer auth via Clerk
-var clerkAuthority = builder.Configuration["Clerk:Authority"];
-if (!string.IsNullOrEmpty(clerkAuthority))
-{
-    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
-        {
-            options.Authority = clerkAuthority;
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateAudience = false,
-                NameClaimType = ClaimTypes.Email,
-            };
-        });
-}
-else
-{
-    builder.Services.AddAuthentication();
-}
+// EF Core InMemory — no Docker required
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseInMemoryDatabase("AspireApp"));
 
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+// Seed data
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Items.AddRange(
+        new Item { Id = 1, Name = "Item One" },
+        new Item { Id = 2, Name = "Item Two" });
+    db.SaveChanges();
+}
+
 app.MapDefaultEndpoints();
-app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/api/items", () =>
+app.MapGet("/api/items", async (AppDbContext db) =>
 {
-    return Results.Ok(new[]
-    {
-        new { id = 1, name = "Item One" },
-        new { id = 2, name = "Item Two" },
-    });
+    var items = await db.Items.ToListAsync();
+    return Results.Ok(items.Select(i => new { id = i.Id, name = i.Name }));
 });
 
-app.MapGet("/api/profile", (ClaimsPrincipal user) =>
+app.MapGet("/api/profile", (HttpContext context) =>
 {
-    if (user.Identity?.IsAuthenticated != true)
+    if (context.User.Identity?.IsAuthenticated != true)
         return Results.Unauthorized();
 
-    var email = user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email") ?? "unknown";
-    var displayName = user.FindFirstValue(ClaimTypes.Name) ?? email;
+    var email = context.User.FindFirstValue(ClaimTypes.Email) ?? "unknown";
+    var displayName = context.User.FindFirstValue(ClaimTypes.Name) ?? email;
 
     return Results.Ok(new { email, displayName });
-}).RequireAuthorization();
+});
 
 app.Run();

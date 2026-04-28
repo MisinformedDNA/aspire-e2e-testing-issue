@@ -21,22 +21,8 @@ jobs:
       - name: Restore
         run: dotnet restore test/AspireApp.E2E.Tests/AspireApp.E2E.Tests.csproj
 
-      - name: Install Azure Functions Core Tools
-        run: npm install -g azure-functions-core-tools@4 --unsafe-perm true
-
-      - name: Docker preflight
-        run: docker version && docker info
-
       - name: Build
         run: dotnet build test/AspireApp.E2E.Tests/AspireApp.E2E.Tests.csproj --configuration Debug --no-restore
-
-      - name: Configure E2E user-secrets
-        env:
-          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
-          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
-        run: |
-          dotnet user-secrets set --project test/AspireApp.E2E.Tests/AspireApp.E2E.Tests.csproj "TestEmail" "${{ env.E2E_TEST_EMAIL }}"
-          dotnet user-secrets set --project test/AspireApp.E2E.Tests/AspireApp.E2E.Tests.csproj "TestPassword" "${{ env.E2E_TEST_PASSWORD }}"
 
       - name: Install Playwright browsers
         shell: pwsh
@@ -48,17 +34,4 @@ jobs:
       - name: Run E2E tests
         env:
           ASPIREAPP_E2E_ASPIRE_START_TIMEOUT_SECONDS: 300
-          Aspire__Microsoft__Azure__Cosmos__UseEmulator: true
-          Aspire__Microsoft__Azure__Cosmos__UseEmulatorPreview: false
         run: dotnet test test/AspireApp.E2E.Tests/AspireApp.E2E.Tests.csproj --configuration Debug --no-build
-
-      - name: Docker diagnostics on failure
-        if: failure()
-        shell: pwsh
-        run: |
-          docker ps -a
-          docker images
-          foreach ($id in (docker ps -aq)) {
-            Write-Host "===== $id ====="
-            docker logs --tail 200 $id
-          }

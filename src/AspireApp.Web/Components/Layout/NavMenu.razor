@@ -6,26 +6,15 @@
         <div class="navbar-nav ms-auto">
             <AuthorizeView>
                 <Authorized>
-                    <button class="btn btn-outline-light" @onclick="SignOut">Sign Out</button>
+                    <form method="post" action="/logout">
+                        <AntiForgeryToken />
+                        <button type="submit" class="btn btn-outline-light">Sign Out</button>
+                    </form>
                 </Authorized>
                 <NotAuthorized>
-                    <button class="btn btn-outline-light" @onclick="SignIn">Sign In</button>
+                    <a href="/login" class="btn btn-outline-light">Sign In</a>
                 </NotAuthorized>
             </AuthorizeView>
         </div>
     </div>
 </nav>
-
-@code {
-    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
-
-    private async Task SignIn()
-    {
-        await JSRuntime.InvokeVoidAsync("clerkInterop.openSignIn");
-    }
-
-    private async Task SignOut()
-    {
-        await JSRuntime.InvokeVoidAsync("clerkInterop.signOut");
-    }
-}

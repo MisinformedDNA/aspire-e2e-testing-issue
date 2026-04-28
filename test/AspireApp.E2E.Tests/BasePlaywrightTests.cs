@@ -1,6 +1,3 @@
-using Aspire.Hosting.Testing;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Playwright;
 
 namespace AspireApp.E2E.Tests;
@@ -9,7 +6,6 @@ public abstract class BasePlaywrightTests
 {
     private const string ApiResourceName = "aspireapp-api";
     private const string WebResourceName = "aspireapp-web";
-    private const string CosmosDbResourceName = "cosmosdb";
 
     protected static AspireManager AspireManager { get; } = new();
     protected static PlaywrightManager PlaywrightManager { get; } = new();
@@ -17,12 +13,15 @@ public abstract class BasePlaywrightTests
     protected static string WebBaseUrl { get; private set; } = string.Empty;
     protected static string ApiBaseUrl { get; private set; } = string.Empty;
 
+    // Stub credentials — no secrets needed
+    private const string StubEmail = "test@example.com";
+    private const string StubPassword = "password";
+
     [Before(Class)]
     public static async Task StartInfrastructureAsync()
     {
         await AspireManager.StartAsync();
 
-        await AspireManager.WaitForResourceReadyAsync(CosmosDbResourceName);
         await AspireManager.WaitForResourceReadyAsync(ApiResourceName);
         await AspireManager.WaitForResourceReadyAsync(WebResourceName);
 
@@ -75,77 +74,38 @@ public abstract class BasePlaywrightTests
         string? email = null,
         string? password = null)
     {
-        var testEmail = email
-            ?? Environment.GetEnvironmentVariable("E2E_TEST_EMAIL")
-            ?? TestConfig.Email;
-        var testPassword = password
-            ?? Environment.GetEnvironmentVariable("E2E_TEST_PASSWORD")
-            ?? TestConfig.Password;
-
-        return await CompleteClerkAuthenticationAsync(page, testEmail, testPassword);
+        return await CompleteStubAuthenticationAsync(
+            page,
+            email ?? StubEmail,
+            password ?? StubPassword);
     }
 
-    protected static async Task<bool> CompleteClerkAuthenticationAsync(
+    protected static async Task<bool> CompleteStubAuthenticationAsync(
         IPage page,
         string email,
         string password)
     {
-        var context = new AuthOrchestrationContext(email, password, WebBaseUrl, "CompleteClerkAuth");
-        var diagnostics = new AuthDiagnosticsWriter("CompleteClerkAuth");
-        var coordinator = new AuthOrchestrationCoordinator(page, context, diagnostics);
-
-        return await coordinator.ExecuteAsync();
-    }
-
-    protected static async Task WaitForClerkToLoadAsync(IPage page, int timeoutMs = 15_000)
-    {
-        var evaluator = new AuthReadinessGateEvaluator(page);
-        await evaluator.WaitForAuthReadinessAsync(TimeSpan.FromMilliseconds(timeoutMs));
-    }
-
-    protected static async Task<bool> EnterClerkVerificationCodeAsync(IPage page, string code = "424242")
-    {
         try
         {
-            var otpInputs = await page.QuerySelectorAllAsync(
-                ".cl-otpCodeField input, input[autocomplete='one-time-code']");
+            await page.GotoAsync($"{WebBaseUrl}/login");
+            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-            if (otpInputs.Count == 0) return false;
+            await page.FillAsync("#login-email", email);
+            await page.FillAsync("#login-password", password);
+            await page.ClickAsync("#login-submit");
 
-            if (otpInputs.Count == 1)
+            await page.WaitForURLAsync(url => !url.Contains("/login"), new PageWaitForURLOptions
             {
-                await otpInputs[0].FillAsync(code);
-                await otpInputs[0].PressAsync("Enter");
-            }
-            else
-            {
-                for (var i = 0; i < Math.Min(code.Length, otpInputs.Count); i++)
-                {
-                    await otpInputs[i].TypeAsync(code[i].ToString());
-                }
-            }
+                Timeout = 15_000,
+            });
 
-            return true;
+            var authUi = await page.QuerySelectorAsync(PageSelectors.AuthenticatedUi);
+            return authUi is not null;
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"[Auth] Stub auth failed: {ex.Message}");
             return false;
         }
     }
-}
-
-/// <summary>
-/// Test configuration - loaded from user-secrets or environment variables.
-/// </summary>
-internal static class TestConfig
-{
-    private static IConfiguration? _config;
-
-    private static IConfiguration Config => _config ??= new ConfigurationBuilder()
-        .AddUserSecrets("aspireapp-e2e-tests-secrets")
-        .AddEnvironmentVariables()
-        .Build();
-
-    public static string Email => Config["TestEmail"] ?? "test3+clerk_test@test.com";
-    public static string Password => Config["TestPassword"] ?? string.Empty;
 }

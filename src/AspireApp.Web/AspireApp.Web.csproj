@@ -7,6 +7,5 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\AspireApp.ServiceDefaults\AspireApp.ServiceDefaults.csproj" />
-    <ProjectReference Include="..\Clerk.Blazor\Clerk.Blazor.csproj" />
   </ItemGroup>
 </Project>
