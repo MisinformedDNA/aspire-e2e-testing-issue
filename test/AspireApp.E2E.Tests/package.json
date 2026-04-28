@@ -1,0 +1,11 @@
+{
+  "name": "aspireapp-e2e-tests",
+  "version": "1.0.0",
+  "description": "Playwright browser dependencies for AspireApp E2E tests",
+  "scripts": {
+    "install-browsers": "npx playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.50.0"
+  }
+}

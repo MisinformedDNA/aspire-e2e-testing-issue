@@ -1,0 +1,20 @@
+@using Microsoft.AspNetCore.Components.Authorization
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/">AspireApp</a>
+        <div class="navbar-nav ms-auto">
+            <AuthorizeView>
+                <Authorized>
+                    <form method="post" action="/logout">
+                        <AntiForgeryToken />
+                        <button type="submit" class="btn btn-outline-light">Sign Out</button>
+                    </form>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="/login" class="btn btn-outline-light">Sign In</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</nav>

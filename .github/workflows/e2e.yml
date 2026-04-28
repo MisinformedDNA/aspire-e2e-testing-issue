@@ -1,0 +1,37 @@
+name: E2E Repro
+
+on:
+  push:
+    branches: ['pr1/**', 'pr2/**', 'pr3/**', 'pr4/**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore test/AspireApp.E2E.Tests/AspireApp.E2E.Tests.csproj
+
+      - name: Build
+        run: dotnet build test/AspireApp.E2E.Tests/AspireApp.E2E.Tests.csproj --configuration Debug --no-restore
+
+      - name: Install Playwright browsers
+        shell: pwsh
+        run: |
+          $script = "test/AspireApp.E2E.Tests/bin/Debug/net10.0/playwright.ps1"
+          if (-not (Test-Path $script)) { throw "playwright.ps1 not found at $script" }
+          pwsh $script install --with-deps chromium
+
+      - name: Run E2E tests
+        env:
+          ASPIREAPP_E2E_ASPIRE_START_TIMEOUT_SECONDS: 300
+        run: dotnet test test/AspireApp.E2E.Tests/AspireApp.E2E.Tests.csproj --configuration Debug --no-build
